@@ -27,11 +27,15 @@
     --num:"Space Grotesk","Inter",system-ui,sans-serif;
     --shadow:0 10px 40px rgba(12,32,29,.16);
     --r:16px;
+    --pad-x:16px;
+    --wrap-max:540px;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0}
   body{
     font-family:var(--sans);
+    font-size:16px;
+    line-height:1.5;
     color:var(--ink);
     background:
       radial-gradient(1200px 600px at 50% -10%, #133a32 0%, var(--green-deep) 60%);
@@ -39,7 +43,12 @@
     -webkit-font-smoothing:antialiased;
     padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
   }
-  .wrap{max-width:520px;margin:0 auto;padding:18px 16px 40px}
+  .wrap{
+    width:100%;
+    max-width:var(--wrap-max);
+    margin:0 auto;
+    padding:36px var(--pad-x) 48px;
+  }
 
   /* Brand header */
   .brand{
@@ -66,13 +75,15 @@
   .card.dark{background:linear-gradient(180deg,var(--green),var(--green-deep));
     border-color:var(--green-soft);color:var(--parch)}
   .card.dark .kicker{color:var(--gold)}
-  .kicker{font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+  .kicker{font-size:11px;letter-spacing:.18em;text-transform:uppercase;
     color:var(--gold-deep);font-weight:600;margin:0 0 8px}
-  h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0;line-height:1.1}
-  h1{font-size:30px}
-  .q-text{font-family:var(--serif);font-size:26px;line-height:1.2;font-weight:600;margin:2px 0 4px}
-  .muted{color:var(--ink-soft);font-size:13px}
-  .card.dark .muted{color:rgba(244,236,214,.72)}
+  h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0;line-height:1.2}
+  h1{font-size:clamp(26px,4vw,34px)}
+  h2{font-size:clamp(22px,3.2vw,28px)}
+  .q-text{font-family:var(--serif);font-size:clamp(22px,3.6vw,32px);line-height:1.25;font-weight:600;margin:4px 0 6px;
+    text-wrap:balance}
+  .muted{color:var(--ink-soft);font-size:14px;line-height:1.55}
+  .card.dark .muted{color:rgba(244,236,214,.78)}
 
   /* Buttons */
   button{font-family:var(--sans);cursor:pointer;border:none;font-size:16px}
@@ -93,13 +104,13 @@
   .btn-row .btn{flex:1}
 
   /* Vote options (guest) */
-  .options{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+  .options{display:flex;flex-direction:column;gap:12px;margin-top:18px}
   .opt{
     position:relative;width:100%;text-align:left;
     padding:18px 18px;border-radius:14px;overflow:hidden;
     background:var(--parch);border:1.5px solid var(--parch-2);
-    color:var(--ink);font-weight:600;font-size:18px;min-height:60px;
-    display:flex;align-items:center;gap:12px;transition:transform .08s,border-color .15s;
+    color:var(--ink);font-weight:600;font-size:clamp(16px,2.4vw,19px);min-height:60px;
+    line-height:1.35;display:flex;align-items:center;gap:12px;transition:transform .08s,border-color .15s;
   }
   .opt:active{transform:scale(.99)}
   .opt .fill{position:absolute;left:0;top:0;bottom:0;width:0%;
@@ -111,8 +122,24 @@
   .opt.chosen .dot{background:var(--gold-deep)}
   .opt.chosen .dot::after{content:"";width:9px;height:9px;border-radius:50%;background:var(--paper)}
   .opt .lbl{z-index:1;flex:1}
-  .opt .pct{z-index:1;font-family:var(--num);font-variant-numeric:tabular-nums;font-size:20px;font-weight:700;color:var(--green)}
-  .opt.locked{cursor:default}
+  .opt .pct{z-index:1;font-family:var(--num);font-variant-numeric:tabular-nums;font-size:clamp(18px,2.6vw,22px);font-weight:700;color:var(--green)}
+  .opt.locked{cursor:default;opacity:.92}
+  .opt.submitting{opacity:.7;pointer-events:none}
+  .vote-note{
+    text-align:center;margin-top:16px;padding:12px 14px;border-radius:12px;
+    font-size:14px;font-weight:600;line-height:1.45;
+    background:rgba(244,236,214,.08);border:1px solid rgba(244,236,214,.14);
+    color:rgba(244,236,214,.78);
+  }
+  .vote-note.ok{
+    background:rgba(63,122,94,.18);border-color:rgba(63,122,94,.45);color:#B7E0C8;
+  }
+  .vote-note.warn{
+    background:rgba(184,151,74,.16);border-color:rgba(217,188,114,.4);color:var(--gold);
+  }
+  .vote-note.closed{
+    background:rgba(156,74,50,.14);border-color:rgba(156,74,50,.35);color:#E0A08C;
+  }
 
   /* Inputs */
   label.fld{display:block;font-size:12px;font-weight:600;letter-spacing:.04em;
@@ -120,44 +147,61 @@
   input[type=text],textarea{
     width:100%;font-family:var(--sans);font-size:16px;color:var(--ink);
     padding:13px 14px;border-radius:11px;border:1px solid var(--line);
-    background:#fff;outline:none;
+    background:#fff;outline:none;line-height:1.45;
   }
   input[type=text]:focus,textarea:focus{border-color:var(--gold-deep);box-shadow:0 0 0 3px rgba(217,188,114,.25)}
   textarea{resize:vertical;min-height:64px}
-  .opt-edit{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-  .opt-edit input{flex:1}
-  .opt-edit .x{flex:none;width:44px;height:44px;border-radius:11px;border:1px solid var(--line);
-    background:#fff;color:var(--danger);font-size:20px}
+  #bulkInput{min-height:160px}
 
   /* Results / stats */
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0 6px}
   .stat{background:rgba(244,236,214,.10);border:1px solid rgba(217,188,114,.28);
-    border-radius:12px;padding:12px 8px;text-align:center}
-  .stat .n{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:34px;font-weight:700;line-height:1;color:var(--gold)}
+    border-radius:12px;padding:14px 10px;text-align:center;
+    display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .stat .n{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:clamp(28px,4vw,36px);font-weight:700;line-height:1;color:var(--gold);
+    display:block;width:100%;text-align:center}
   .stat .l{font-size:11px;letter-spacing:.12em;text-transform:uppercase;
-    color:rgba(244,236,214,.7);margin-top:6px}
+    color:rgba(244,236,214,.7);margin-top:8px;line-height:1.3}
 
-  .bars{display:flex;flex-direction:column;gap:12px;margin-top:6px}
-  .bar-row .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
-  .bar-row .name{font-weight:600;font-size:15px;color:var(--parch)}
-  .bar-row .val{font-family:var(--num);font-variant-numeric:tabular-nums;font-weight:700;font-size:17px;color:var(--gold)}
+  .bars{display:flex;flex-direction:column;gap:14px;margin-top:8px}
+  .bar-row .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;gap:12px}
+  .bar-row .name{font-weight:600;font-size:15px;color:var(--parch);line-height:1.35}
+  .bar-row .val{font-family:var(--num);font-variant-numeric:tabular-nums;font-weight:700;font-size:17px;color:var(--gold);flex:none}
   .track{height:16px;border-radius:9px;background:rgba(244,236,214,.12);overflow:hidden}
   .track .fill{height:100%;width:0%;border-radius:9px;
     transition:width .7s cubic-bezier(.2,.8,.2,1)}
 
-  /* Donut */
-  .donut-wrap{display:flex;align-items:center;gap:18px;margin-top:4px}
-  .donut{width:132px;height:132px;flex:none;border-radius:50%;position:relative;
-    background:conic-gradient(rgba(244,236,214,.14) 0 100%);transition:background .7s ease}
-  .donut::after{content:"";position:absolute;inset:16px;border-radius:50%;
-    background:var(--green-deep);display:grid}
-  .donut .center{position:absolute;inset:0;display:grid;place-items:center;z-index:1;text-align:center}
-  .donut .center .big{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:30px;font-weight:700;color:var(--parch);line-height:1}
-  .donut .center .cap{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(244,236,214,.65);margin-top:3px}
-  .legend{display:flex;flex-direction:column;gap:8px;flex:1}
-  .leg{display:flex;align-items:center;gap:9px;font-size:14px;color:var(--parch)}
+  /* Donut — number + Votes stacked in the hole */
+  .donut-wrap{display:flex;align-items:center;justify-content:center;gap:20px;margin-top:8px}
+  .donut{
+    width:140px;height:140px;flex:none;border-radius:50%;position:relative;
+    background:conic-gradient(rgba(244,236,214,.14) 0 100%);transition:background .7s ease;
+  }
+  .donut::after{
+    content:"";position:absolute;inset:18px;border-radius:50%;
+    background:var(--green-deep);z-index:0;pointer-events:none;
+  }
+  .donut .center{
+    position:absolute;inset:18px;z-index:1;pointer-events:none;
+    display:grid;place-items:center;
+  }
+  .donut .center .stack{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;gap:12px;
+  }
+  .donut .center .big{
+    font-family:var(--num);font-variant-numeric:tabular-nums;
+    font-size:clamp(26px,4.5vw,32px);font-weight:700;color:var(--parch);
+    line-height:1;letter-spacing:-.02em;margin:0;padding:0;
+  }
+  .donut .center .cap{
+    display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--gold);margin:0;padding:0;line-height:1.2;
+  }
+  .legend{display:flex;flex-direction:column;gap:10px;flex:1;min-width:0}
+  .leg{display:flex;align-items:center;gap:10px;font-size:15px;color:var(--parch);line-height:1.35}
   .leg .sw{width:13px;height:13px;border-radius:4px;flex:none}
-  .leg .lp{margin-left:auto;font-family:var(--num);font-variant-numeric:tabular-nums;font-weight:700;color:var(--gold)}
+  .leg .lp{margin-left:auto;font-family:var(--num);font-variant-numeric:tabular-nums;font-weight:700;color:var(--gold);flex:none}
 
   /* misc */
   .pill{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;
@@ -167,35 +211,19 @@
   .pill .d{width:8px;height:8px;border-radius:50%;background:currentColor;
     box-shadow:0 0 0 0 currentColor;animation:pulse 1.8s infinite}
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(143,211,175,.6)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
-  .toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:14px}
-  .toolbar .switch{display:flex;background:rgba(244,236,214,.08);border:1px solid var(--green-soft);
-    border-radius:999px;padding:4px}
-  .toolbar .switch a{padding:8px 15px;border-radius:999px;font-size:13px;font-weight:600;
-    color:rgba(244,236,214,.7);text-decoration:none}
-  .toolbar .switch a.on{background:var(--gold);color:var(--green-deep)}
-  .center-msg{text-align:center;padding:26px 12px}
-  .center-msg .big{font-family:var(--serif);font-size:24px;color:var(--parch)}
+  .toolbar{display:flex;gap:8px;align-items:center;justify-content:flex-start;margin-bottom:14px}
+  .center-msg{text-align:center;padding:32px 16px}
+  .center-msg .big{font-family:var(--serif);font-size:clamp(22px,3.5vw,28px);color:var(--parch);line-height:1.25}
   .qr{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:8px}
   .qr img{width:180px;height:180px;background:#fff;border-radius:12px;padding:8px;border:1px solid var(--gold)}
   .link-box{display:flex;gap:8px;margin-top:8px}
   .link-box input{flex:1;font-size:13px}
-  .hint{font-size:12px;color:var(--ink-soft);margin-top:8px;line-height:1.5}
-  .card.dark .hint{color:rgba(244,236,214,.6)}
+  .hint{font-size:13px;color:var(--ink-soft);margin-top:8px;line-height:1.55}
+  .card.dark .hint{color:rgba(244,236,214,.65)}
   .hidden{display:none!important}
 
-  /* ===== ADMIN TABS ===== */
-  .admin-tabs{display:flex;gap:6px;background:rgba(244,236,214,.06);border:1px solid var(--green-soft);
-    border-radius:14px;padding:5px;margin-bottom:14px}
-  .admin-tab{flex:1;padding:12px 10px;border-radius:10px;background:transparent;color:rgba(244,236,214,.72);
-    font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;border:none}
-  .admin-tab.on{background:linear-gradient(180deg,var(--gold),var(--gold-deep));color:var(--green-deep)}
-  .tab-badge{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:11px;font-weight:700;
-    min-width:20px;height:20px;padding:0 6px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;
-    background:rgba(244,236,214,.14);color:inherit}
-  .admin-tab.on .tab-badge{background:rgba(12,32,29,.20)}
-
   /* ===== QUESTION BANK ===== */
-  .bank-row{padding:12px 0;border-top:1px solid var(--line)}
+  .bank-row{padding:14px 0;border-top:1px solid var(--line)}
   .bank-row:first-child{border-top:none}
   .bank-row.live{background:rgba(217,188,114,.16);margin:4px -8px;padding:14px 12px 14px 10px;
     border-radius:12px;border-top:none;border-left:4px solid var(--gold-deep);box-shadow:0 6px 20px rgba(184,151,74,.22)}
@@ -203,18 +231,65 @@
   .bank-num{flex:none;width:24px;height:24px;border-radius:50%;background:var(--parch-2);color:var(--green);
     font-family:var(--num);font-variant-numeric:tabular-nums;font-size:12px;font-weight:700;display:grid;place-items:center;margin-top:1px}
   .bank-row.live .bank-num{background:var(--gold-deep);color:var(--paper)}
-  .bank-row .bq{flex:1;font-weight:600;font-size:15px;line-height:1.32;color:var(--ink)}
+  .bank-row .bq{flex:1;font-weight:600;font-size:15px;line-height:1.4;color:var(--ink)}
   .live-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;letter-spacing:.1em;
     text-transform:uppercase;color:var(--paper);background:var(--gold-deep);padding:3px 9px;border-radius:999px;margin-left:6px;white-space:nowrap}
   .live-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--paper);animation:pulse 1.8s infinite}
-  .bank-row .bo{font-size:12px;color:var(--ink-soft);margin:6px 0 0 33px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .bank-actions{display:flex;gap:8px;margin:11px 0 0 33px}
-  .bank-actions button{flex:1;height:40px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;
+  .bank-row .bo{font-size:13px;color:var(--ink-soft);margin:6px 0 0 33px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
+  .bank-actions{display:flex;gap:8px;margin:11px 0 0 33px;flex-wrap:wrap}
+  .bank-actions button{flex:1;min-width:90px;height:42px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;
     display:flex;align-items:center;justify-content:center;gap:5px;padding:0 8px;border:1px solid var(--line);background:#fff;color:var(--green)}
   .bank-actions button.pub{flex:1.4;background:var(--green);color:var(--parch);border-color:var(--green-soft)}
   .bank-row.live .bank-actions button.pub{background:var(--gold-deep);border-color:var(--gold-deep);color:var(--paper)}
   .bank-actions button.del{color:var(--danger);border-color:rgba(156,74,50,.35)}
 
+  .admin-live-grid{display:flex;flex-direction:column;gap:16px;margin-top:8px}
+
+  /* Tablet+ */
+  @media (min-width:640px){
+    :root{ --wrap-max:640px; --pad-x:24px; --r:18px; }
+    .wrap{padding:48px var(--pad-x) 56px}
+    .card{padding:22px 22px;margin-bottom:16px}
+    .brand{padding:26px 24px 22px;margin-bottom:18px}
+    .donut{width:156px;height:156px}
+    .donut::after,.donut .center{inset:20px}
+    .donut .center .big{font-size:34px}
+    .donut .center .stack{gap:14px}
+    .donut-wrap{gap:28px}
+  }
+
+  /* Laptop / desktop */
+  @media (min-width:900px){
+    :root{ --wrap-max:820px; --pad-x:32px; }
+    .wrap{padding:56px var(--pad-x) 64px}
+    .brand img{width:min(58%,380px)}
+    .card{padding:26px 28px}
+    .options{gap:14px}
+    .opt{padding:20px 22px;min-height:64px}
+    .donut{width:168px;height:168px}
+    .donut::after,.donut .center{inset:22px}
+    .donut .center .big{font-size:38px}
+    .donut .center .cap{font-size:12px}
+    .donut .center .stack{gap:16px}
+    .leg{font-size:16px}
+    .bar-row .name{font-size:16px}
+    .bar-row .val{font-size:18px}
+    .track{height:18px}
+    /* Admin live: results side-by-side when space allows */
+    .admin-live-grid{
+      display:grid;
+      grid-template-columns:1.15fr .85fr;
+      gap:28px;
+      align-items:start;
+      margin-top:8px;
+    }
+    .admin-live-grid .donut-wrap{margin-top:0;flex-direction:column;align-items:center}
+    .admin-live-grid .legend{width:100%}
+  }
+
+  @media (min-width:1100px){
+    :root{ --wrap-max:920px; }
+  }
   /* ===== BIG-SCREEN PRESENTATION VIEW ===== */
   .screen{position:fixed;inset:0;z-index:60;color:var(--parch);overflow:hidden;
     background:radial-gradient(1400px 800px at 50% -10%, #163f36 0%, var(--green-deep) 62%);
@@ -245,12 +320,21 @@
     border-radius:50%;position:relative;
     background:conic-gradient(rgba(244,236,214,.14) 0 100%);transition:background .7s ease;
     box-shadow:0 20px 60px rgba(0,0,0,.35)}
-  .s-donut::after{content:"";position:absolute;inset:15%;border-radius:50%;background:var(--green-deep)}
-  .s-donut .c{position:absolute;inset:0;display:grid;place-items:center;text-align:center;z-index:1}
-  .s-donut .c .n{font-family:var(--num);font-variant-numeric:tabular-nums;font-weight:700;line-height:1;color:var(--paper);
-    font-size:clamp(48px,9vmin,120px)}
-  .s-donut .c .l{font-size:clamp(11px,1.4vmin,18px);letter-spacing:.18em;text-transform:uppercase;
-    color:rgba(244,236,214,.66);margin-top:6px}
+  .s-donut::after{content:"";position:absolute;inset:15%;border-radius:50%;background:var(--green-deep);z-index:0;pointer-events:none}
+  .s-donut .c{
+    position:absolute;inset:15%;z-index:1;pointer-events:none;
+    display:grid;place-items:center;
+  }
+  .s-donut .c .stack{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;gap:20px;
+  }
+  .s-donut .c .n{
+    font-family:var(--num);font-variant-numeric:tabular-nums;font-weight:700;line-height:1;color:var(--paper);
+    font-size:clamp(40px,7.5vmin,96px);margin:0;padding:0;letter-spacing:-.03em}
+  .s-donut .c .l{
+    display:block;font-size:clamp(12px,1.5vmin,18px);letter-spacing:.16em;text-transform:uppercase;
+    color:var(--gold);margin:0;padding:0;line-height:1.2}
 
   .s-bars{flex:1;max-width:min(60vw,900px);display:flex;flex-direction:column;
     gap:clamp(12px,2.2vmin,26px);min-width:0}
@@ -292,6 +376,20 @@
   code{background:rgba(0,0,0,.25);padding:2px 6px;border-radius:5px;font-size:12px}
   .footer{text-align:center;color:rgba(244,236,214,.4);font-size:11px;margin-top:22px;
     letter-spacing:.1em;text-transform:uppercase}
+  .host-link{
+    position:fixed;right:max(12px,env(safe-area-inset-right));
+    bottom:max(12px,env(safe-area-inset-bottom));
+    z-index:40;font-size:11px;font-weight:600;letter-spacing:.06em;
+    text-transform:uppercase;text-decoration:none;
+    color:rgba(244,236,214,.38);padding:8px 10px;border-radius:8px;
+    background:rgba(12,32,29,.35);border:1px solid rgba(244,236,214,.08);
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    transition:color .15s,background .15s,border-color .15s;
+  }
+  .host-link:hover,.host-link:focus-visible{
+    color:rgba(244,236,214,.85);background:rgba(12,32,29,.55);
+    border-color:rgba(217,188,114,.35);outline:none;
+  }
 </style>
 </head>
 <body>
@@ -320,13 +418,9 @@
     </details>
   </div>
 
-  <!-- VIEW TOGGLE (admin only shows both) -->
+  <!-- Status only — host opens #admin URL separately -->
   <div class="toolbar" id="toolbar">
     <span id="statusPill" class="pill off"><span class="d"></span> Loading…</span>
-    <div class="switch" id="viewSwitch">
-      <a href="#vote" id="tabVote" class="on">Vote</a>
-      <a href="#admin" id="tabAdmin">Admin</a>
-    </div>
   </div>
 
   <!-- ============ GUEST VIEW ============ -->
@@ -340,13 +434,13 @@
       <p class="kicker" id="gPollLabel">Question</p>
       <div class="q-text" id="gQuestion"></div>
       <div class="options" id="gOptions"></div>
-      <p class="hint" id="gVotedNote" style="text-align:center;margin-top:14px"></p>
+      <p class="vote-note" id="gVotedNote">Tap an option to cast your vote.</p>
     </div>
 
     <div id="guestResults" class="card dark hidden">
       <p class="kicker">Live results</p>
       <div class="donut-wrap">
-        <div class="donut" id="gDonut"><div class="center"><div class="big" id="gTotal">0</div><div class="cap">Votes</div></div></div>
+        <div class="donut" id="gDonut"><div class="center"><div class="stack"><div class="big" id="gTotal">0</div><div class="cap">Votes</div></div></div></div>
         <div class="legend" id="gLegend"></div>
       </div>
     </div>
@@ -363,51 +457,21 @@
       <input type="text" id="pinInput" inputmode="numeric" autocomplete="off" placeholder="••••" />
       <div style="height:12px"></div>
       <button class="btn gold" id="pinBtn">Unlock host panel</button>
-      <p class="hint">Default PIN is set in the file (<code>ADMIN_PIN</code>). Change it before the event.</p>
+      <p class="hint">Keep this link private. Change <code>ADMIN_PIN</code> in the file before the event.</p>
     </div>
 
     <!-- Admin body -->
     <div id="adminBody" class="hidden">
 
-      <!-- Tabs -->
-      <div class="admin-tabs">
-        <button class="admin-tab on" id="tabBtnCompose">Set question</button>
-        <button class="admin-tab" id="tabBtnBank">Question bank <span class="tab-badge" id="tabBankBadge">0</span></button>
-      </div>
-
-      <!-- Compose -->
-      <div class="card" id="tabCompose">
-        <p class="kicker">Set the question</p>
-        <label class="fld" for="qInput">Question</label>
-        <textarea id="qInput" placeholder="e.g. Should we open the floor for Q&amp;A now?"></textarea>
-
-        <label class="fld">Answer options</label>
-        <div id="optEditor"></div>
-        <button class="btn ghost sm" id="addOptBtn" style="width:100%;margin-top:4px">+ Add option</button>
-
-        <div class="btn-row" style="margin-top:10px">
-          <button class="btn ghost sm" data-preset="yn" style="flex:1">Yes / No</button>
-          <button class="btn ghost sm" data-preset="ynm" style="flex:1">Yes / No / Maybe</button>
-          <button class="btn ghost sm" data-preset="abcd" style="flex:1">A · B · C · D</button>
-        </div>
-
-        <div style="height:14px"></div>
-        <div class="btn-row">
-          <button class="btn gold" id="publishBtn" style="flex:2">Publish &amp; open voting</button>
-          <button class="btn ghost" id="saveBankBtn" style="flex:1">Save to bank</button>
-        </div>
-        <p class="hint">Publish opens voting now. Save to bank stores it for later.</p>
-      </div>
-
       <!-- Question bank -->
-      <div class="card hidden" id="tabBank">
+      <div class="card" id="tabBank">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <p class="kicker" style="margin:0">Question bank</p>
           <span class="kicker" id="bankCount" style="margin:0;color:var(--ink-soft)">0 saved</span>
         </div>
 
         <div id="bankList" style="margin-top:10px"></div>
-        <p class="hint" id="bankEmpty">No saved questions yet. Add one in “Set question”, or paste a batch below.</p>
+        <p class="hint" id="bankEmpty">No saved questions yet. Paste a batch below to get started.</p>
 
         <button class="btn gold sm" id="publishNextBtn" style="width:100%;margin-top:6px">Publish next in list ▶</button>
 
@@ -427,7 +491,7 @@ Extend the session by 30 mins? | Yes | No | Maybe"></textarea>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
           <div>
             <p class="kicker" style="margin:0">Now live</p>
-            <div class="q-text" id="aQuestion" style="font-size:20px;margin-top:4px">—</div>
+            <div class="q-text" id="aQuestion" style="margin-top:4px">—</div>
           </div>
           <span id="aStatePill" class="pill off"><span class="d"></span> Closed</span>
         </div>
@@ -436,11 +500,12 @@ Extend the session by 30 mins? | Yes | No | Maybe"></textarea>
           <div class="stat"><div class="n" id="aTotal">0</div><div class="l">Total voted</div></div>
         </div>
 
-        <div class="bars" id="aBars"></div>
-
-        <div class="donut-wrap" style="margin-top:16px">
-          <div class="donut" id="aDonut"><div class="center"><div class="big" id="aDonutTotal">0</div><div class="cap">Votes</div></div></div>
-          <div class="legend" id="aLegend"></div>
+        <div class="admin-live-grid">
+          <div class="bars" id="aBars"></div>
+          <div class="donut-wrap">
+            <div class="donut" id="aDonut"><div class="center"><div class="stack"><div class="big" id="aDonutTotal">0</div><div class="cap">Votes</div></div></div></div>
+            <div class="legend" id="aLegend"></div>
+          </div>
         </div>
 
         <div class="btn-row" style="margin-top:16px">
@@ -469,6 +534,9 @@ Extend the session by 30 mins? | Yes | No | Maybe"></textarea>
   <div class="footer">TrueLegacy · A NexGrowth brand</div>
 </div>
 
+<a href="#admin" class="host-link" id="hostLink" title="Host panel">Host</a>
+<a href="#" class="host-link hidden" id="backToVote" title="Back to voting">← Vote</a>
+
 <!-- ============ BIG-SCREEN RESULTS (opens in its own tab) ============ -->
 <section id="screenView" class="screen hidden">
   <button class="s-exit" id="sExit">Exit ✕</button>
@@ -486,7 +554,7 @@ Extend the session by 30 mins? | Yes | No | Maybe"></textarea>
     <div class="s-kicker">Live Poll</div>
     <div class="s-q" id="sQuestion">—</div>
     <div class="s-body">
-      <div class="s-donut" id="sDonut"><div class="c"><div class="n" id="sTotal">0</div><div class="l">Votes</div></div></div>
+      <div class="s-donut" id="sDonut"><div class="c"><div class="stack"><div class="n" id="sTotal">0</div><div class="l">Votes</div></div></div></div>
       <div class="s-bars" id="sBars"></div>
     </div>
   </div>
@@ -529,9 +597,12 @@ var $  = function(s){return document.querySelector(s);};
 var $$ = function(s){return Array.prototype.slice.call(document.querySelectorAll(s));};
 function toast(msg){var t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove("show");},2200);}
 
-/* device id — one vote per device per round */
+/* device id — one vote per browser/device per round (no login required) */
 var deviceId = localStorage.getItem("tl_device");
 if(!deviceId){deviceId = "d"+Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem("tl_device",deviceId);}
+function votedLocalKey(round){ return "tl_voted_"+POLL_ID+"_r"+(round!=null?round:0); }
+function rememberLocalVote(round, optId){ try{ localStorage.setItem(votedLocalKey(round), optId); }catch(e){} }
+function localVote(round){ try{ return localStorage.getItem(votedLocalKey(round)); }catch(e){ return null; } }
 
 /* ---- If not configured, show setup and keep guest waiting ---- */
 if(!configReady){
@@ -563,15 +634,15 @@ function route(){
   // big-screen mode hides all normal chrome and takes over the viewport
   $("#screenView").classList.toggle("hidden", !isScreen);
   document.querySelector(".wrap").classList.toggle("hidden", isScreen);
+  $("#hostLink").classList.toggle("hidden", isAdmin || isScreen);
+  $("#backToVote").classList.toggle("hidden", !isAdmin || isScreen);
   if(isScreen){ renderScreen(); return; }
-  $("#tabVote").classList.toggle("on", !isAdmin);
-  $("#tabAdmin").classList.toggle("on", isAdmin);
   $("#guestView").classList.toggle("hidden", isAdmin);
   $("#adminView").classList.toggle("hidden", !isAdmin);
   if(isAdmin){
     $("#pinGate").classList.toggle("hidden", adminUnlocked);
     $("#adminBody").classList.toggle("hidden", !adminUnlocked);
-    if(adminUnlocked) renderBank();
+    if(adminUnlocked){ renderBank(); renderAdminLive(); }
   }
 }
 window.addEventListener("hashchange", route);
@@ -620,7 +691,18 @@ function statusPill(){
 function renderAll(){ statusPill(); renderGuest(); renderAdminLive(); renderScreen(); renderBank(); }
 
 /* ---------- GUEST ---------- */
-function myChoice(){ return votesCache[deviceId] || null; }
+function pollRound(){ return (state && state.round!=null) ? state.round : 0; }
+function myChoice(){
+  var fromDb = votesCache[deviceId] || null;
+  if(fromDb) return fromDb;
+  return localVote(pollRound()) || null;
+}
+var voteSubmitting=false;
+function setVoteNote(text, kind){
+  var note=$("#gVotedNote");
+  note.textContent=text;
+  note.className="vote-note"+(kind?" "+kind:"");
+}
 function renderGuest(){
   var hasPoll = !!state && Array.isArray(state.options) && state.options.length>0;
   $("#guestNoPoll").classList.toggle("hidden", hasPoll);
@@ -630,14 +712,18 @@ function renderGuest(){
   $("#gQuestion").textContent = state.question || "—";
   var t=tally(), counts=t.counts, total=t.total;
   var chosen=myChoice(), voted=!!chosen, votingOpen=!!state.active, showRes=state.showResults!==false;
+  var chosenLabel = "";
+  if(chosen){
+    for(var i=0;i<state.options.length;i++){ if(state.options[i].id===chosen){ chosenLabel=state.options[i].label; break; } }
+  }
 
   var box=$("#gOptions"); box.innerHTML="";
   state.options.forEach(function(o){
     var c=counts[o.id]||0, pct= total?Math.round(c/total*100):0;
-    var locked = voted || !votingOpen;
+    var locked = voted || !votingOpen || voteSubmitting;
     var el=document.createElement(locked?"div":"button");
     el.className="opt"+(chosen===o.id?" chosen":"")+(locked?" locked":"");
-    var showPct = locked && showRes;
+    var showPct = locked && showRes && voted;
     el.innerHTML =
       '<div class="fill" style="width:'+(showPct?pct:0)+'%"></div>'+
       '<span class="dot"></span>'+
@@ -647,20 +733,54 @@ function renderGuest(){
     box.appendChild(el);
   });
 
-  var note=$("#gVotedNote");
-  if(!votingOpen && !voted){ note.textContent="Voting is closed."; }
-  else if(voted){ note.textContent = showRes ? "Your vote is recorded. Results update live." : "Your vote is recorded. Results will be revealed by the host."; }
-  else { note.textContent="Tap an option to cast your vote."; }
+  if(voteSubmitting){ setVoteNote("Submitting your vote…", ""); }
+  else if(!votingOpen && !voted){ setVoteNote("Voting is closed for this question.", "closed"); }
+  else if(voted){
+    var pick = chosenLabel ? (' You chose “'+chosenLabel+'”.') : "";
+    setVoteNote("Already submitted — one vote per device."+pick+(showRes?" Results update live.":" Results will be revealed by the host."), "ok");
+  }
+  else { setVoteNote("Tap an option to vote. You can submit only once.", ""); }
 
   var showGuestRes = voted && showRes && total>0;
   $("#guestResults").classList.toggle("hidden", !showGuestRes);
   if(showGuestRes) renderDonut("#gDonut","#gLegend","#gTotal",counts,total);
 }
 function castVote(optId){
-  if(!state || !state.active){toast("Voting is closed");return;}
-  P.myVote(state.round!=null?state.round:0).set(optId)
-    .then(function(){toast("Vote recorded");})
-    .catch(function(e){console.error(e);toast("Could not record vote");});
+  if(!state || !state.active){ toast("Voting is closed"); setVoteNote("Voting is closed for this question.", "closed"); return; }
+  if(myChoice()){ toast("Already submitted"); setVoteNote("Already submitted — one vote per device.", "warn"); renderGuest(); return; }
+  if(voteSubmitting){ toast("Please wait…"); return; }
+
+  var round = pollRound();
+  voteSubmitting = true;
+  renderGuest();
+
+  // Write only if this device has no vote yet (blocks change / double-submit)
+  P.myVote(round).transaction(function(current){
+    if(current != null) return;           // abort — already voted
+    return optId;
+  }).then(function(result){
+    voteSubmitting = false;
+    if(!result.committed){
+      // Someone/something already wrote a vote for this device
+      var existing = result.snapshot && result.snapshot.val();
+      if(existing) rememberLocalVote(round, existing);
+      toast("Already submitted");
+      setVoteNote("Already submitted — one vote per device.", "warn");
+      renderGuest();
+      return;
+    }
+    rememberLocalVote(round, optId);
+    votesCache[deviceId] = optId;        // optimistic until listener catches up
+    toast("Vote recorded");
+    setVoteNote("Vote recorded — one vote per device. Thank you!", "ok");
+    renderGuest();
+  }).catch(function(e){
+    voteSubmitting = false;
+    console.error(e);
+    toast("Could not record vote");
+    setVoteNote("Could not record vote. Please try again.", "closed");
+    renderGuest();
+  });
 }
 
 /* ---------- ADMIN live ---------- */
@@ -774,38 +894,10 @@ function renderScreen(){
 
 /* ========================= ADMIN actions ========================= */
 $("#pinBtn").addEventListener("click", function(){
-  if($("#pinInput").value.trim()===ADMIN_PIN){adminUnlocked=true;route();buildEditor();renderBank();toast("Host panel unlocked");}
+  if($("#pinInput").value.trim()===ADMIN_PIN){adminUnlocked=true;route();renderAll();toast("Host panel unlocked");}
   else toast("Wrong PIN");
 });
 $("#pinInput").addEventListener("keydown", function(e){ if(e.key==="Enter") $("#pinBtn").click(); });
-
-var editorOpts=[{label:"Yes"},{label:"No"}];
-function buildEditor(){
-  var box=$("#optEditor"); box.innerHTML="";
-  editorOpts.forEach(function(o,idx){
-    var row=document.createElement("div"); row.className="opt-edit";
-    row.innerHTML='<input type="text" value="'+esc(o.label)+'" placeholder="Option '+(idx+1)+'" data-i="'+idx+'"/>'+
-                  '<button class="x" data-del="'+idx+'">×</button>';
-    box.appendChild(row);
-  });
-  box.querySelectorAll("input").forEach(function(inp){ inp.addEventListener("input", function(e){ editorOpts[+e.target.dataset.i].label=e.target.value; }); });
-  box.querySelectorAll("[data-del]").forEach(function(b){ b.addEventListener("click", function(e){
-    var i=+e.target.dataset.del;
-    if(editorOpts.length<=2){toast("Need at least 2 options");return;}
-    editorOpts.splice(i,1); buildEditor();
-  }); });
-}
-$("#addOptBtn").addEventListener("click", function(){
-  if(editorOpts.length>=8){toast("Max 8 options");return;}
-  editorOpts.push({label:""}); buildEditor();
-});
-$$("[data-preset]").forEach(function(b){ b.addEventListener("click", function(){
-  var p=b.dataset.preset;
-  editorOpts = p==="yn"?[{label:"Yes"},{label:"No"}]
-    : p==="ynm"?[{label:"Yes"},{label:"No"},{label:"Maybe"}]
-    : [{label:"Option A"},{label:"Option B"},{label:"Option C"},{label:"Option D"}];
-  buildEditor();
-}); });
 
 /* publish any question (labels array) — clears votes, new round */
 function publishQuestion(q, optLabels, bankId){
@@ -822,10 +914,6 @@ function publishQuestion(q, optLabels, bankId){
     .catch(function(e){console.error(e);toast("Publish failed — check DB rules");});
 }
 
-$("#publishBtn").addEventListener("click", function(){
-  publishQuestion($("#qInput").value, editorOpts.map(function(o){return o.label;}));
-});
-
 /* ---------- QUESTION BANK ---------- */
 function saveBank(arr){
   return P.bank().set(arr).catch(function(e){console.error(e);toast("Bank save failed — check DB rules");});
@@ -836,7 +924,6 @@ function renderBank(){
   if(!isAdmin) return;
   var list=$("#bankList"); if(!list) return;
   $("#bankCount").textContent = bank.length + " saved";
-  var badge=$("#tabBankBadge"); if(badge) badge.textContent = bank.length;
   $("#bankEmpty").classList.toggle("hidden", bank.length>0);
   $("#publishNextBtn").classList.toggle("hidden", bank.length===0);
   var liveId = state && state.bankId ? state.bankId : null;
@@ -867,26 +954,6 @@ function renderBank(){
     var t=copy[i-1]; copy[i-1]=copy[i]; copy[i]=t; saveBank(copy);
   }); });
 }
-
-/* admin tab switch */
-function showAdminTab(which){
-  var compose = which!=="bank";
-  $("#tabCompose").classList.toggle("hidden", !compose);
-  $("#tabBank").classList.toggle("hidden", compose);
-  $("#tabBtnCompose").classList.toggle("on", compose);
-  $("#tabBtnBank").classList.toggle("on", !compose);
-}
-$("#tabBtnCompose").addEventListener("click", function(){ showAdminTab("compose"); });
-$("#tabBtnBank").addEventListener("click", function(){ showAdminTab("bank"); });
-
-$("#saveBankBtn").addEventListener("click", function(){
-  var q=$("#qInput").value.trim();
-  var opts=editorOpts.map(function(o){return o.label.trim();}).filter(Boolean);
-  if(!q){toast("Enter a question first");return;}
-  if(opts.length<2){toast("Add at least 2 options");return;}
-  var copy=bank.slice(); copy.push({id:newBankId(), q:q, opts:opts});
-  saveBank(copy).then(function(){toast("Saved to bank"); $("#qInput").value=""; showAdminTab("bank"); });
-});
 
 $("#bulkAddBtn").addEventListener("click", function(){
   var raw=$("#bulkInput").value.split("\n");
@@ -947,7 +1014,7 @@ $("#presentBtn").addEventListener("click", function(){
 $("#sExit").addEventListener("click", function(){ location.hash="admin"; });
 
 /* share link + QR */
-function guestURL(){ var u=new URL(location.href); u.hash="vote"; return u.toString(); }
+function guestURL(){ var u=new URL(location.href); u.hash=""; return u.toString().replace(/#$/,""); }
 function setupShare(){
   var url=guestURL();
   $("#guestLink").value=url;
@@ -964,11 +1031,10 @@ $("#copyBtn").addEventListener("click", function(){
 
 /* helpers */
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m];});}
-function shorten(s){s=String(s||"");return s.length>16?s.slice(0,15)+"…":s;}
+function shorten(s){s=String(s||"");return s.length>22?s.slice(0,21)+"…":s;}
 
 /* init */
 route();
-if(adminUnlocked) buildEditor();
 setupShare();
 </script>
 </body>
