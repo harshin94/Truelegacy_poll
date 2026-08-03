@@ -293,7 +293,8 @@
   /* ===== BIG-SCREEN PRESENTATION VIEW ===== */
   .screen{position:fixed;inset:0;z-index:60;color:var(--parch);overflow:hidden;
     background:radial-gradient(1400px 800px at 50% -10%, #163f36 0%, var(--green-deep) 62%);
-    padding:clamp(18px,3.2vmin,52px);display:flex;flex-direction:column;gap:clamp(14px,2.6vmin,34px)}
+    padding:clamp(36px,5.5vmin,72px) clamp(18px,3.2vmin,52px) clamp(18px,3.2vmin,52px);
+    display:flex;flex-direction:column;gap:clamp(14px,2.6vmin,34px)}
   .s-head{display:flex;align-items:center;justify-content:space-between;gap:20px;flex:none}
   .s-logo{background:linear-gradient(180deg,var(--paper),var(--parch));border:1px solid var(--gold);
     border-radius:14px;padding:clamp(8px,1.2vmin,14px) clamp(12px,1.8vmin,20px);display:flex;align-items:center;box-shadow:var(--shadow)}
@@ -350,13 +351,7 @@
   .s-track .fill{height:100%;width:0%;border-radius:999px;
     transition:width .8s cubic-bezier(.2,.8,.2,1)}
 
-  .s-foot{flex:none;display:flex;align-items:flex-end;justify-content:space-between;gap:20px}
-  .s-qr{display:flex;align-items:center;gap:clamp(10px,1.4vmin,18px)}
-  .s-qr img{width:clamp(70px,10vmin,132px);height:clamp(70px,10vmin,132px);
-    background:#fff;border-radius:12px;padding:6px;border:1px solid var(--gold)}
-  .s-qr .t{font-size:clamp(12px,1.5vmin,20px);color:rgba(244,236,214,.8);line-height:1.3}
-  .s-qr .t b{color:var(--gold);display:block;font-family:var(--serif);
-    font-size:clamp(15px,1.9vmin,26px);font-weight:700}
+  .s-foot{flex:none;display:flex;align-items:flex-end;justify-content:flex-end;gap:20px}
   .s-total{font-size:clamp(12px,1.5vmin,20px);color:rgba(244,236,214,.7);text-align:right}
   .s-total b{color:var(--paper);font-family:var(--num);font-variant-numeric:tabular-nums;font-weight:700;
     font-size:clamp(20px,3vmin,46px);display:block}
@@ -560,7 +555,6 @@ Extend the session by 30 mins? | Yes | No | Maybe"></textarea>
   </div>
 
   <div class="s-foot">
-    <div class="s-qr"><img id="sQr" alt="Scan to vote" /><div class="t"><b>Scan to vote</b>Join from your phone</div></div>
     <div class="s-total"><b id="sFootTotal">0</b>votes cast</div>
   </div>
 </section>
@@ -1020,7 +1014,6 @@ function setupShare(){
   $("#guestLink").value=url;
   var qr="https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=8&data="+encodeURIComponent(url);
   var img=$("#qrImg"); img.src=qr; img.onerror=function(){ img.style.display="none"; };
-  var sqr=$("#sQr"); sqr.src=qr; sqr.onerror=function(){ sqr.style.display="none"; };
   // mirror the brand logo into the big-screen chip
   var brandLogo=document.querySelector(".brand img");
   if(brandLogo) $("#sLogoImg").src=brandLogo.src;
