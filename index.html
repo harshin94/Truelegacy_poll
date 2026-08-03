@@ -864,7 +864,7 @@ function renderGuest(){
   else if(!votingOpen && !voted){ setVoteNote("Voting is closed for this question.", "closed"); }
   else if(voted){
     var pick = chosenLabel ? (' You chose “'+chosenLabel+'”.') : "";
-    setVoteNote("Already submitted — one vote per device."+pick+(showRes?" Results update live.":" Results will be revealed by the host."), "ok");
+    setVoteNote("Already submitted."+pick+(showRes?" Results update live.":" Results will be revealed by the host."), "ok");
   }
   else { setVoteNote("Tap an option to vote. You can submit only once.", ""); }
 
@@ -874,7 +874,7 @@ function renderGuest(){
 }
 function castVote(optId){
   if(!state || !state.active){ toast("Voting is closed"); setVoteNote("Voting is closed for this question.", "closed"); return; }
-  if(myChoice()){ toast("Already submitted"); setVoteNote("Already submitted — one vote per device.", "warn"); renderGuest(); return; }
+  if(myChoice()){ toast("Already submitted"); setVoteNote("Already submitted.", "warn"); renderGuest(); return; }
   if(voteSubmitting){ toast("Please wait…"); return; }
 
   var round = pollRound();
@@ -892,7 +892,7 @@ function castVote(optId){
       var existing = result.snapshot && result.snapshot.val();
       if(existing) rememberLocalVote(round, existing);
       toast("Already submitted");
-      setVoteNote("Already submitted — one vote per device.", "warn");
+      setVoteNote("Already submitted.", "warn");
       renderGuest();
       return;
     }
