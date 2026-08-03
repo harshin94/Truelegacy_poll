@@ -790,19 +790,22 @@ function setupIdle(){
   if(brandLogo) $("#idleLogoImg").src=brandLogo.src;
 }
 function applyGuestIdle(){
-  var show = !isAdmin && !isScreen && !!(state && state.idle);
+  var idleOn = !!(state && state.idle);
+  var show = !isAdmin && idleOn;
   $("#idleView").classList.toggle("hidden", !show);
   if(show){
     setupIdle();
     document.querySelector(".wrap").classList.add("hidden");
-  } else if(!isScreen){
-    document.querySelector(".wrap").classList.remove("hidden");
+    $("#screenView").classList.add("hidden");
+  } else {
+    if(!isScreen) document.querySelector(".wrap").classList.remove("hidden");
+    $("#screenView").classList.toggle("hidden", !isScreen);
   }
 }
 function syncIdleButtons(){
   var on = !!(state && state.idle);
   var label = on ? "End idle" : "Idle screen";
-  var tip = on ? "Return guests to the voting page" : "Show idle screen on guest phones";
+  var tip = on ? "Return guests and big screen to live view" : "Show idle on guest phones and big screen";
   ["#idleBtn","#idleBtnTop"].forEach(function(sel){
     var el=$(sel); if(!el) return;
     el.textContent = label;
@@ -813,7 +816,7 @@ function syncIdleButtons(){
 function setGuestIdle(on){
   if(!db){ toast("Database not connected"); return; }
   P.state().update({idle: !!on}).then(function(){
-    toast(on ? "Guests see idle screen" : "Guests back to voting");
+    toast(on ? "Idle on for guests & big screen" : "Idle ended — live view restored");
   }).catch(function(e){ console.error(e); toast("Could not update idle"); });
 }
 
