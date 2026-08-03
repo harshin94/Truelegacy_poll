@@ -381,9 +381,69 @@
     backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
     transition:color .15s,background .15s,border-color .15s;
   }
+  .host-link.idle-link{
+    right:auto;left:max(12px,env(safe-area-inset-left));
+  }
   .host-link:hover,.host-link:focus-visible{
     color:rgba(244,236,214,.85);background:rgba(12,32,29,.55);
     border-color:rgba(217,188,114,.35);outline:none;
+  }
+
+  /* ===== IDLE SCREEN ===== */
+  .idle{
+    position:fixed;inset:0;z-index:60;overflow:hidden;
+    color:var(--parch);
+    background:
+      radial-gradient(1100px 700px at 50% 10%, #1a463c 0%, transparent 55%),
+      radial-gradient(900px 500px at 80% 90%, rgba(184,151,74,.12) 0%, transparent 50%),
+      radial-gradient(1400px 800px at 50% -10%, #163f36 0%, var(--green-deep) 62%);
+    padding:clamp(36px,5.5vmin,72px) clamp(18px,3.2vmin,52px);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;gap:clamp(18px,3vmin,36px);
+  }
+  .idle-mark{
+    width:min(72vw,420px);padding:clamp(22px,3.4vmin,40px) clamp(26px,4vmin,52px);
+    background:linear-gradient(180deg,var(--paper),var(--parch));
+    border:1px solid var(--gold);border-radius:20px;box-shadow:var(--shadow);
+    position:relative;overflow:hidden;
+    animation:idleRise .9s ease both;
+  }
+  .idle-mark::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(280px 100px at 50% 0%,rgba(217,188,114,.28),transparent 70%);
+  }
+  .idle-mark img{width:100%;height:auto;display:block;position:relative;z-index:1}
+  .idle-rule{display:flex;align-items:center;gap:12px;width:min(46vw,220px);animation:idleRise 1s .12s ease both}
+  .idle-rule span{height:1px;flex:1;background:rgba(217,188,114,.55)}
+  .idle-rule b{
+    width:9px;height:9px;transform:rotate(45deg);background:var(--gold);
+    box-shadow:0 0 0 0 rgba(217,188,114,.45);animation:idlePulse 2.4s ease-in-out infinite;
+  }
+  .idle-kicker{
+    font-size:clamp(11px,1.4vmin,15px);letter-spacing:.32em;text-transform:uppercase;
+    color:var(--gold);font-weight:600;animation:idleRise 1s .18s ease both;
+  }
+  .idle-title{
+    font-family:var(--serif);font-weight:600;line-height:1.12;text-wrap:balance;
+    font-size:clamp(28px,5vmin,64px);color:var(--paper);max-width:16ch;
+    animation:idleRise 1s .24s ease both;
+  }
+  .idle-sub{
+    font-size:clamp(14px,1.8vmin,20px);color:rgba(244,236,214,.7);max-width:34ch;line-height:1.5;
+    animation:idleRise 1s .3s ease both;
+  }
+  .idle-foot{
+    position:absolute;bottom:clamp(18px,3vmin,40px);left:0;right:0;
+    text-align:center;font-size:clamp(11px,1.3vmin,14px);letter-spacing:.18em;
+    text-transform:uppercase;color:rgba(244,236,214,.38);
+  }
+  @keyframes idleRise{
+    from{opacity:0;transform:translateY(14px)}
+    to{opacity:1;transform:translateY(0)}
+  }
+  @keyframes idlePulse{
+    0%,100%{box-shadow:0 0 0 0 rgba(217,188,114,.0);opacity:1}
+    50%{box-shadow:0 0 0 10px rgba(217,188,114,0);opacity:.85}
   }
 </style>
 </head>
@@ -507,7 +567,10 @@ Extend the session by 30 mins? | Yes | No | Maybe"></textarea>
           <button class="btn" id="toggleLiveBtn" style="flex:1">Close voting</button>
           <button class="btn" id="toggleResultsBtn" style="flex:1">Hide from guests</button>
         </div>
-        <button class="btn gold" id="presentBtn" style="margin-top:10px">Open results on big screen ↗</button>
+        <div class="btn-row" style="margin-top:10px">
+          <button class="btn gold" id="presentBtn" style="flex:1">Results screen ↗</button>
+          <button class="btn" id="idleBtn" style="flex:1">Idle screen ↗</button>
+        </div>
         <button class="btn danger" id="resetBtn" style="margin-top:10px">Reset results</button>
       </div>
 
@@ -529,8 +592,20 @@ Extend the session by 30 mins? | Yes | No | Maybe"></textarea>
   <div class="footer">TrueLegacy · A NexGrowth brand</div>
 </div>
 
+<a href="#idle" class="host-link idle-link" id="idleLink" title="Idle screen">Idle screen</a>
 <a href="#admin" class="host-link" id="hostLink" title="Host panel">Host</a>
 <a href="#" class="host-link hidden" id="backToVote" title="Back to voting">← Vote</a>
+
+<!-- ============ IDLE SCREEN (between polls / waiting) ============ -->
+<section id="idleView" class="idle hidden">
+  <button class="s-exit" id="idleExit">Exit ✕</button>
+  <div class="idle-mark"><img id="idleLogoImg" alt="TrueLegacy" /></div>
+  <div class="idle-rule"><span></span><b></b><span></span></div>
+  <div class="idle-kicker">Live Audience Poll</div>
+  <div class="idle-title">Please stand by</div>
+  <div class="idle-sub">The next question will begin shortly. Keep your phone ready to vote.</div>
+  <div class="idle-foot">TrueLegacy · A NexGrowth brand</div>
+</section>
 
 <!-- ============ BIG-SCREEN RESULTS (opens in its own tab) ============ -->
 <section id="screenView" class="screen hidden">
@@ -620,16 +695,20 @@ var P = {
 };
 
 /* ========================= ROUTING ========================= */
-var isAdmin=false, isScreen=false, adminUnlocked=false;
+var isAdmin=false, isScreen=false, isIdle=false, adminUnlocked=false;
 function route(){
   var h = location.hash.replace("#","");
   isScreen = h==="screen";
+  isIdle   = h==="idle";
   isAdmin  = h==="admin";
-  // big-screen mode hides all normal chrome and takes over the viewport
+  var takeover = isScreen || isIdle;
   $("#screenView").classList.toggle("hidden", !isScreen);
-  document.querySelector(".wrap").classList.toggle("hidden", isScreen);
-  $("#hostLink").classList.toggle("hidden", isAdmin || isScreen);
-  $("#backToVote").classList.toggle("hidden", !isAdmin || isScreen);
+  $("#idleView").classList.toggle("hidden", !isIdle);
+  document.querySelector(".wrap").classList.toggle("hidden", takeover);
+  $("#hostLink").classList.toggle("hidden", isAdmin || takeover);
+  $("#idleLink").classList.toggle("hidden", isAdmin || takeover);
+  $("#backToVote").classList.toggle("hidden", !isAdmin || takeover);
+  if(isIdle){ setupIdle(); return; }
   if(isScreen){ renderScreen(); return; }
   $("#guestView").classList.toggle("hidden", isAdmin);
   $("#adminView").classList.toggle("hidden", !isAdmin);
@@ -1000,12 +1079,23 @@ $("#resetBtn").addEventListener("click", function(){
     .catch(function(e){console.error(e);toast("Reset failed");});
 });
 
-/* open big-screen results in a new tab */
+/* open big-screen / idle in a new tab */
 function screenURL(){ var u=new URL(location.href); u.hash="screen"; return u.toString(); }
+function idleURL(){ var u=new URL(location.href); u.hash="idle"; return u.toString(); }
+function setupIdle(){
+  var brandLogo=document.querySelector(".brand img");
+  if(brandLogo) $("#idleLogoImg").src=brandLogo.src;
+}
 $("#presentBtn").addEventListener("click", function(){
   window.open(screenURL(), "_blank", "noopener");
 });
+$("#idleBtn").addEventListener("click", function(){
+  window.open(idleURL(), "_blank", "noopener");
+});
 $("#sExit").addEventListener("click", function(){ location.hash="admin"; });
+$("#idleExit").addEventListener("click", function(){
+  location.hash = adminUnlocked ? "admin" : "";
+});
 
 /* share link + QR */
 function guestURL(){ var u=new URL(location.href); u.hash=""; return u.toString().replace(/#$/,""); }
