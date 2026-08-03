@@ -226,6 +226,12 @@
     color:rgba(244,236,214,.95);background:rgba(12,32,29,.65);
     border-color:rgba(217,188,114,.4);outline:none;
   }
+  .admin-chip-link.on{
+    color:var(--green-deep);background:var(--gold);border-color:var(--gold-deep);
+  }
+  .admin-chip-link.on:hover,.admin-chip-link.on:focus-visible{
+    color:var(--green-deep);background:#E8D49A;border-color:var(--gold);
+  }
   .admin-chip-link.arrow{
     width:34px;height:34px;padding:0;display:grid;place-items:center;
     font-size:16px;letter-spacing:0;border-radius:10px;
@@ -618,7 +624,6 @@ Extend the session by 30 mins? | Yes | No | Maybe"></textarea>
 
 <!-- ============ IDLE SCREEN (between polls / waiting) ============ -->
 <section id="idleView" class="idle hidden">
-  <button class="s-exit" id="idleExit">Exit ✕</button>
   <div class="idle-mark"><img id="idleLogoImg" alt="TrueLegacy" /></div>
   <div class="idle-rule"><span></span><b></b><span></span></div>
   <div class="idle-kicker">Live Audience Poll</div>
@@ -629,7 +634,6 @@ Extend the session by 30 mins? | Yes | No | Maybe"></textarea>
 
 <!-- ============ BIG-SCREEN RESULTS (opens in its own tab) ============ -->
 <section id="screenView" class="screen hidden">
-  <button class="s-exit" id="sExit">Exit ✕</button>
   <div class="s-head">
     <div class="s-logo"><img id="sLogoImg" alt="TrueLegacy" /></div>
     <span id="sPill" class="s-pill off"><span class="d"></span> Waiting</span>
@@ -715,20 +719,16 @@ var P = {
 };
 
 /* ========================= ROUTING ========================= */
-var isAdmin=false, isScreen=false, isIdle=false, adminUnlocked=false;
+var isAdmin=false, isScreen=false, adminUnlocked=false;
 function route(){
   var h = location.hash.replace("#","");
   isScreen = h==="screen";
-  isIdle   = h==="idle";
   isAdmin  = h==="admin";
-  var takeover = isScreen || isIdle;
   $("#screenView").classList.toggle("hidden", !isScreen);
-  $("#idleView").classList.toggle("hidden", !isIdle);
-  document.querySelector(".wrap").classList.toggle("hidden", takeover);
-  $("#backToVote").classList.toggle("hidden", !isAdmin || takeover);
-  $("#toolbarAdmin").classList.toggle("hidden", !(isAdmin && adminUnlocked) || takeover);
-  if(isIdle){ setupIdle(); return; }
-  if(isScreen){ renderScreen(); return; }
+  document.querySelector(".wrap").classList.toggle("hidden", isScreen);
+  $("#backToVote").classList.toggle("hidden", !isAdmin || isScreen);
+  $("#toolbarAdmin").classList.toggle("hidden", !(isAdmin && adminUnlocked) || isScreen);
+  if(isScreen){ renderScreen(); applyGuestIdle(); return; }
   $("#guestView").classList.toggle("hidden", isAdmin);
   $("#adminView").classList.toggle("hidden", !isAdmin);
   if(isAdmin){
@@ -736,6 +736,7 @@ function route(){
     $("#adminBody").classList.toggle("hidden", !adminUnlocked);
     if(adminUnlocked){ renderBank(); renderAdminLive(); }
   }
+  applyGuestIdle();
 }
 window.addEventListener("hashchange", route);
 
@@ -777,10 +778,44 @@ if(configReady){
 function statusPill(){
   var pill=$("#statusPill");
   if(!state){pill.className="pill off";pill.innerHTML='<span class="d"></span> Waiting';return;}
+  if(state.idle){pill.className="pill off";pill.innerHTML='<span class="d"></span> Idle on guests';return;}
   if(state.active){pill.className="pill live";pill.innerHTML='<span class="d"></span> Voting live';}
   else{pill.className="pill off";pill.innerHTML='<span class="d"></span> Voting closed';}
 }
-function renderAll(){ statusPill(); renderGuest(); renderAdminLive(); renderScreen(); renderBank(); }
+function renderAll(){ statusPill(); renderGuest(); renderAdminLive(); renderScreen(); renderBank(); applyGuestIdle(); syncIdleButtons(); }
+
+/* Guest idle overlay — driven by host via Firebase state.idle */
+function setupIdle(){
+  var brandLogo=document.querySelector(".brand img");
+  if(brandLogo) $("#idleLogoImg").src=brandLogo.src;
+}
+function applyGuestIdle(){
+  var show = !isAdmin && !isScreen && !!(state && state.idle);
+  $("#idleView").classList.toggle("hidden", !show);
+  if(show){
+    setupIdle();
+    document.querySelector(".wrap").classList.add("hidden");
+  } else if(!isScreen){
+    document.querySelector(".wrap").classList.remove("hidden");
+  }
+}
+function syncIdleButtons(){
+  var on = !!(state && state.idle);
+  var label = on ? "End idle" : "Idle screen";
+  var tip = on ? "Return guests to the voting page" : "Show idle screen on guest phones";
+  ["#idleBtn","#idleBtnTop"].forEach(function(sel){
+    var el=$(sel); if(!el) return;
+    el.textContent = label;
+    el.title = tip;
+    el.classList.toggle("on", on);
+  });
+}
+function setGuestIdle(on){
+  if(!db){ toast("Database not connected"); return; }
+  P.state().update({idle: !!on}).then(function(){
+    toast(on ? "Guests see idle screen" : "Guests back to voting");
+  }).catch(function(e){ console.error(e); toast("Could not update idle"); });
+}
 
 /* ---------- GUEST ---------- */
 function pollRound(){ return (state && state.round!=null) ? state.round : 0; }
@@ -883,7 +918,8 @@ function renderAdminLive(){
   var t = has?tally():{counts:{},total:0}, counts=t.counts, total=t.total;
 
   var pill=$("#aStatePill");
-  if(state && state.active){pill.className="pill live";pill.innerHTML='<span class="d"></span> Live';}
+  if(state && state.idle){pill.className="pill off";pill.innerHTML='<span class="d"></span> Idle';}
+  else if(state && state.active){pill.className="pill live";pill.innerHTML='<span class="d"></span> Live';}
   else{pill.className="pill off";pill.innerHTML='<span class="d"></span> Closed';}
   $("#toggleLiveBtn").textContent = (state && state.active) ? "Close voting":"Open voting";
   $("#toggleResultsBtn").textContent = (state && state.showResults===false) ? "Reveal to guests":"Hide from guests";
@@ -998,7 +1034,7 @@ function publishQuestion(q, optLabels, bankId){
   if(opts.length<2){toast("Need at least 2 options");return;}
   var nextRound=((state && state.round!=null)?state.round:-1)+1;
   var options=opts.map(function(label,i){return {id:"o"+i,label:label};});
-  var payload={question:q.trim(), options:options, active:true, showResults:true, round:nextRound};
+  var payload={question:q.trim(), options:options, active:true, showResults:true, round:nextRound, idle:false};
   if(bankId) payload.bankId=bankId;
   P.votes(nextRound).remove().then(function(){
     return P.state().set(payload);
@@ -1098,23 +1134,16 @@ $("#resetBtn").addEventListener("click", function(){
     .catch(function(e){console.error(e);toast("Reset failed");});
 });
 
-/* open big-screen in a new tab; idle is same-tab takeover */
+/* open big-screen in a new tab; idle toggles guest phones via Firebase */
 function screenURL(){ var u=new URL(location.href); u.hash="screen"; return u.toString(); }
-function setupIdle(){
-  var brandLogo=document.querySelector(".brand img");
-  if(brandLogo) $("#idleLogoImg").src=brandLogo.src;
-}
 $("#presentBtn").addEventListener("click", function(){
   window.open(screenURL(), "_blank", "noopener");
 });
-$("#idleBtn").addEventListener("click", function(){ location.hash = "idle"; });
-$("#idleBtnTop").addEventListener("click", function(){ location.hash = "idle"; });
+function toggleGuestIdle(){ setGuestIdle(!(state && state.idle)); }
+$("#idleBtn").addEventListener("click", toggleGuestIdle);
+$("#idleBtnTop").addEventListener("click", toggleGuestIdle);
 $("#scrollBottomBtn").addEventListener("click", function(){
   window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
-});
-$("#sExit").addEventListener("click", function(){ location.hash="admin"; });
-$("#idleExit").addEventListener("click", function(){
-  location.hash = adminUnlocked ? "admin" : "";
 });
 
 /* share link + QR */
