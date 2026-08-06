@@ -240,6 +240,12 @@
   .card.dark .admin-chip-link{
     color:rgba(244,236,214,.45);background:rgba(12,32,29,.45);border-color:rgba(244,236,214,.12);
   }
+  .guest-succession{
+    margin:0 0 14px;text-align:center;
+  }
+  .guest-succession .btn{
+    width:100%;justify-content:center;text-decoration:none;
+  }
   .center-msg{text-align:center;padding:32px 16px}
   .center-msg .big{font-family:var(--serif);font-size:clamp(22px,3.5vw,28px);color:var(--parch);line-height:1.25}
   .qr{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:8px}
@@ -504,13 +510,17 @@
     <span id="statusPill" class="pill off"><span class="d"></span> Loading…</span>
     <div class="toolbar-admin hidden" id="toolbarAdmin">
       <button type="button" class="admin-chip-link" id="idleBtnTop" title="Idle screen">Idle screen</button>
-      <a class="admin-chip-link" href="https://truelegacyindia.com/succession" target="_blank" rel="noopener noreferrer" title="Open Succession tool">Succession tool</a>
+      <button type="button" class="admin-chip-link" id="successionBtnTop" title="Show Succession tool on guest phones">Succession tool</button>
       <button type="button" class="admin-chip-link arrow" id="scrollBottomBtn" title="Jump to bottom" aria-label="Jump to bottom">↓</button>
     </div>
   </div>
 
   <!-- ============ GUEST VIEW ============ -->
   <section id="guestView">
+    <div id="guestSuccession" class="guest-succession hidden">
+      <a class="btn gold" href="https://truelegacyindia.com/succession" target="_blank" rel="noopener noreferrer">Succession tool ↗</a>
+    </div>
+
     <div id="guestNoPoll" class="card center-msg hidden">
       <div class="big">No live question yet</div>
       <p class="muted" style="margin-top:8px">Keep this page open — voting opens when the host starts.</p>
@@ -582,7 +592,7 @@ Extend the session by 30 mins? | Yes | No | Maybe"></textarea>
           <div class="admin-live-meta">
             <span id="aStatePill" class="pill off"><span class="d"></span> Closed</span>
             <button type="button" class="admin-chip-link" id="idleBtn" title="Open idle screen">Idle screen</button>
-            <a class="admin-chip-link" href="https://truelegacyindia.com/succession" target="_blank" rel="noopener noreferrer" title="Open Succession tool">Succession tool</a>
+            <button type="button" class="admin-chip-link" id="successionBtn" title="Show Succession tool on guest phones">Succession tool</button>
           </div>
         </div>
 
@@ -732,7 +742,7 @@ function route(){
   document.querySelector(".wrap").classList.toggle("hidden", isScreen);
   $("#backToVote").classList.toggle("hidden", !isAdmin || isScreen);
   $("#toolbarAdmin").classList.toggle("hidden", !(isAdmin && adminUnlocked) || isScreen);
-  if(isScreen){ renderScreen(); applyGuestIdle(); return; }
+  if(isScreen){ renderScreen(); applyGuestIdle(); applyGuestSuccession(); return; }
   $("#guestView").classList.toggle("hidden", isAdmin);
   $("#adminView").classList.toggle("hidden", !isAdmin);
   if(isAdmin){
@@ -741,6 +751,7 @@ function route(){
     if(adminUnlocked){ renderBank(); renderAdminLive(); }
   }
   applyGuestIdle();
+  applyGuestSuccession();
 }
 window.addEventListener("hashchange", route);
 
@@ -786,7 +797,7 @@ function statusPill(){
   if(state.active){pill.className="pill live";pill.innerHTML='<span class="d"></span> Voting live';}
   else{pill.className="pill off";pill.innerHTML='<span class="d"></span> Voting closed';}
 }
-function renderAll(){ statusPill(); renderGuest(); renderAdminLive(); renderScreen(); renderBank(); applyGuestIdle(); syncIdleButtons(); }
+function renderAll(){ statusPill(); renderGuest(); renderAdminLive(); renderScreen(); renderBank(); applyGuestIdle(); syncIdleButtons(); syncSuccessionButtons(); }
 
 /* Guest idle overlay — driven by host via Firebase state.idle */
 function setupIdle(){
@@ -824,6 +835,30 @@ function setGuestIdle(on){
   }).catch(function(e){ console.error(e); toast("Could not update idle"); });
 }
 
+/* Succession tool CTA on guest phones — host toggles via state.successionTool */
+function applyGuestSuccession(){
+  var show = !isAdmin && !isScreen && !!(state && state.successionTool);
+  $("#guestSuccession").classList.toggle("hidden", !show);
+}
+function syncSuccessionButtons(){
+  var on = !!(state && state.successionTool);
+  var label = on ? "Hide succession" : "Succession tool";
+  var tip = on ? "Hide Succession tool button from guests" : "Show Succession tool button on guest phones";
+  ["#successionBtn","#successionBtnTop"].forEach(function(sel){
+    var el=$(sel); if(!el) return;
+    el.textContent = label;
+    el.title = tip;
+    el.classList.toggle("on", on);
+  });
+  applyGuestSuccession();
+}
+function setGuestSuccession(on){
+  if(!db){ toast("Database not connected"); return; }
+  P.state().update({successionTool: !!on}).then(function(){
+    toast(on ? "Succession tool shown to guests" : "Succession tool hidden from guests");
+  }).catch(function(e){ console.error(e); toast("Could not update succession tool"); });
+}
+
 /* ---------- GUEST ---------- */
 function pollRound(){ return (state && state.round!=null) ? state.round : 0; }
 function myChoice(){
@@ -838,6 +873,7 @@ function setVoteNote(text, kind){
   note.className="vote-note"+(kind?" "+kind:"");
 }
 function renderGuest(){
+  applyGuestSuccession();
   var hasPoll = !!state && Array.isArray(state.options) && state.options.length>0;
   $("#guestNoPoll").classList.toggle("hidden", hasPoll);
   $("#guestPoll").classList.toggle("hidden", !hasPoll);
@@ -1041,7 +1077,7 @@ function publishQuestion(q, optLabels, bankId){
   if(opts.length<2){toast("Need at least 2 options");return;}
   var nextRound=((state && state.round!=null)?state.round:-1)+1;
   var options=opts.map(function(label,i){return {id:"o"+i,label:label};});
-  var payload={question:q.trim(), options:options, active:true, showResults:true, round:nextRound, idle:false};
+  var payload={question:q.trim(), options:options, active:true, showResults:true, round:nextRound, idle:false, successionTool:!!(state && state.successionTool)};
   if(bankId) payload.bankId=bankId;
   P.votes(nextRound).remove().then(function(){
     return P.state().set(payload);
@@ -1149,6 +1185,9 @@ $("#presentBtn").addEventListener("click", function(){
 function toggleGuestIdle(){ setGuestIdle(!(state && state.idle)); }
 $("#idleBtn").addEventListener("click", toggleGuestIdle);
 $("#idleBtnTop").addEventListener("click", toggleGuestIdle);
+function toggleGuestSuccession(){ setGuestSuccession(!(state && state.successionTool)); }
+$("#successionBtn").addEventListener("click", toggleGuestSuccession);
+$("#successionBtnTop").addEventListener("click", toggleGuestSuccession);
 $("#scrollBottomBtn").addEventListener("click", function(){
   window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
 });
