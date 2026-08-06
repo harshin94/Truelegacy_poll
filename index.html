@@ -240,12 +240,6 @@
   .card.dark .admin-chip-link{
     color:rgba(244,236,214,.45);background:rgba(12,32,29,.45);border-color:rgba(244,236,214,.12);
   }
-  .guest-succession{
-    margin:0 0 14px;text-align:center;
-  }
-  .guest-succession .btn{
-    width:100%;justify-content:center;text-decoration:none;
-  }
   .center-msg{text-align:center;padding:32px 16px}
   .center-msg .big{font-family:var(--serif);font-size:clamp(22px,3.5vw,28px);color:var(--parch);line-height:1.25}
   .qr{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:8px}
@@ -464,6 +458,19 @@
     font-size:clamp(14px,1.8vmin,20px);color:rgba(244,236,214,.7);max-width:34ch;line-height:1.5;
     animation:idleRise 1s .3s ease both;
   }
+  .idle-cta{
+    display:inline-flex;align-items:center;justify-content:center;gap:10px;
+    margin-top:clamp(4px,1vmin,12px);padding:clamp(14px,2vmin,20px) clamp(22px,4vmin,40px);
+    font-family:var(--sans);font-size:clamp(14px,1.8vmin,18px);font-weight:700;
+    letter-spacing:.04em;text-decoration:none;border-radius:14px;
+    color:var(--green-deep);
+    background:linear-gradient(180deg,var(--gold),var(--gold-deep));
+    border:1px solid var(--gold-deep);box-shadow:0 12px 32px rgba(0,0,0,.28);
+    animation:idleRise 1s .36s ease both;
+    transition:filter .15s,transform .08s;
+  }
+  .idle-cta:hover,.idle-cta:focus-visible{filter:brightness(1.06);outline:none}
+  .idle-cta:active{transform:scale(.985)}
   .idle-foot{
     position:absolute;bottom:clamp(18px,3vmin,40px);left:0;right:0;
     text-align:center;font-size:clamp(11px,1.3vmin,14px);letter-spacing:.18em;
@@ -517,10 +524,6 @@
 
   <!-- ============ GUEST VIEW ============ -->
   <section id="guestView">
-    <div id="guestSuccession" class="guest-succession hidden">
-      <a class="btn gold" href="https://truelegacyindia.com/succession" target="_blank" rel="noopener noreferrer">Succession tool ↗</a>
-    </div>
-
     <div id="guestNoPoll" class="card center-msg hidden">
       <div class="big">No live question yet</div>
       <p class="muted" style="margin-top:8px">Keep this page open — voting opens when the host starts.</p>
@@ -643,6 +646,17 @@ Extend the session by 30 mins? | Yes | No | Maybe"></textarea>
   <div class="idle-kicker">Live Audience Poll</div>
   <div class="idle-title">Please stand by</div>
   <div class="idle-sub"> Keep your phone ready.</div>
+  <div class="idle-foot">TrueLegacy</div>
+</section>
+
+<!-- ============ SUCCESSION TOOL PROMO (guest / big screen) ============ -->
+<section id="successionView" class="idle hidden">
+  <div class="idle-mark"><img id="succLogoImg" alt="TrueLegacy" /></div>
+  <div class="idle-rule"><span></span><b></b><span></span></div>
+  <div class="idle-kicker">Estate Planning</div>
+  <div class="idle-title">Check out our Succession Tool</div>
+  <div class="idle-sub">Identify legal heirs and plan your family’s legacy with clarity. Tap below to open the tool.</div>
+  <a class="idle-cta" href="https://truelegacyindia.com/succession" target="_blank" rel="noopener noreferrer">Open Succession Tool ↗</a>
   <div class="idle-foot">TrueLegacy</div>
 </section>
 
@@ -793,23 +807,31 @@ if(configReady){
 function statusPill(){
   var pill=$("#statusPill");
   if(!state){pill.className="pill off";pill.innerHTML='<span class="d"></span> Waiting';return;}
+  if(state.successionTool){pill.className="pill off";pill.innerHTML='<span class="d"></span> Succession on guests';return;}
   if(state.idle){pill.className="pill off";pill.innerHTML='<span class="d"></span> Idle on guests';return;}
   if(state.active){pill.className="pill live";pill.innerHTML='<span class="d"></span> Voting live';}
   else{pill.className="pill off";pill.innerHTML='<span class="d"></span> Voting closed';}
 }
 function renderAll(){ statusPill(); renderGuest(); renderAdminLive(); renderScreen(); renderBank(); applyGuestIdle(); syncIdleButtons(); syncSuccessionButtons(); }
 
-/* Guest idle overlay — driven by host via Firebase state.idle */
-function setupIdle(){
+/* Guest overlays — idle & succession (succession takes priority) */
+function setupIdleLogos(){
   var brandLogo=document.querySelector(".brand img");
-  if(brandLogo) $("#idleLogoImg").src=brandLogo.src;
+  if(!brandLogo) return;
+  if($("#idleLogoImg")) $("#idleLogoImg").src=brandLogo.src;
+  if($("#succLogoImg")) $("#succLogoImg").src=brandLogo.src;
 }
-function applyGuestIdle(){
-  var idleOn = !!(state && state.idle);
-  var show = !isAdmin && idleOn;
-  $("#idleView").classList.toggle("hidden", !show);
-  if(show){
-    setupIdle();
+function applyPresentationOverlays(){
+  var succOn = !!(state && state.successionTool);
+  var idleOn = !!(state && state.idle) && !succOn;
+  var showSucc = !isAdmin && succOn;
+  var showIdle = !isAdmin && idleOn;
+  var takeover = showSucc || showIdle;
+
+  $("#successionView").classList.toggle("hidden", !showSucc);
+  $("#idleView").classList.toggle("hidden", !showIdle);
+  if(takeover){
+    setupIdleLogos();
     document.querySelector(".wrap").classList.add("hidden");
     $("#screenView").classList.add("hidden");
   } else {
@@ -817,6 +839,7 @@ function applyGuestIdle(){
     $("#screenView").classList.toggle("hidden", !isScreen);
   }
 }
+function applyGuestIdle(){ applyPresentationOverlays(); }
 function syncIdleButtons(){
   var on = !!(state && state.idle);
   var label = on ? "End idle" : "Idle screen";
@@ -830,20 +853,19 @@ function syncIdleButtons(){
 }
 function setGuestIdle(on){
   if(!db){ toast("Database not connected"); return; }
-  P.state().update({idle: !!on}).then(function(){
+  var patch={idle: !!on};
+  if(on) patch.successionTool=false;
+  P.state().update(patch).then(function(){
     toast(on ? "Idle on for guests & big screen" : "Idle ended — live view restored");
   }).catch(function(e){ console.error(e); toast("Could not update idle"); });
 }
 
-/* Succession tool CTA on guest phones — host toggles via state.successionTool */
-function applyGuestSuccession(){
-  var show = !isAdmin && !isScreen && !!(state && state.successionTool);
-  $("#guestSuccession").classList.toggle("hidden", !show);
-}
+/* Succession promo screen — host toggles via state.successionTool */
+function applyGuestSuccession(){ applyPresentationOverlays(); }
 function syncSuccessionButtons(){
   var on = !!(state && state.successionTool);
   var label = on ? "Hide succession" : "Succession tool";
-  var tip = on ? "Hide Succession tool button from guests" : "Show Succession tool button on guest phones";
+  var tip = on ? "Hide succession screen from guests" : "Show succession screen on guest phones";
   ["#successionBtn","#successionBtnTop"].forEach(function(sel){
     var el=$(sel); if(!el) return;
     el.textContent = label;
@@ -854,8 +876,10 @@ function syncSuccessionButtons(){
 }
 function setGuestSuccession(on){
   if(!db){ toast("Database not connected"); return; }
-  P.state().update({successionTool: !!on}).then(function(){
-    toast(on ? "Succession tool shown to guests" : "Succession tool hidden from guests");
+  var patch={successionTool: !!on};
+  if(on) patch.idle=false;
+  P.state().update(patch).then(function(){
+    toast(on ? "Succession screen shown to guests" : "Succession screen hidden");
   }).catch(function(e){ console.error(e); toast("Could not update succession tool"); });
 }
 
@@ -873,7 +897,6 @@ function setVoteNote(text, kind){
   note.className="vote-note"+(kind?" "+kind:"");
 }
 function renderGuest(){
-  applyGuestSuccession();
   var hasPoll = !!state && Array.isArray(state.options) && state.options.length>0;
   $("#guestNoPoll").classList.toggle("hidden", hasPoll);
   $("#guestPoll").classList.toggle("hidden", !hasPoll);
@@ -961,7 +984,8 @@ function renderAdminLive(){
   var t = has?tally():{counts:{},total:0}, counts=t.counts, total=t.total;
 
   var pill=$("#aStatePill");
-  if(state && state.idle){pill.className="pill off";pill.innerHTML='<span class="d"></span> Idle';}
+  if(state && state.successionTool){pill.className="pill off";pill.innerHTML='<span class="d"></span> Succession';}
+  else if(state && state.idle){pill.className="pill off";pill.innerHTML='<span class="d"></span> Idle';}
   else if(state && state.active){pill.className="pill live";pill.innerHTML='<span class="d"></span> Live';}
   else{pill.className="pill off";pill.innerHTML='<span class="d"></span> Closed';}
   $("#toggleLiveBtn").textContent = (state && state.active) ? "Close voting":"Open voting";
