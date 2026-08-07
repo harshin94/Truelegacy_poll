@@ -476,6 +476,19 @@
     text-align:center;font-size:clamp(11px,1.3vmin,14px);letter-spacing:.18em;
     text-transform:uppercase;color:rgba(244,236,214,.38);
   }
+  /* Full-bleed photo idle (TV / desktop + phone assets) */
+  .idle.idle-photo{
+    padding:0;gap:0;background:var(--green-deep);
+  }
+  .idle-photo .idle-bg{
+    position:absolute;inset:0;width:100%;height:100%;
+    object-fit:cover;object-position:center;display:block;
+  }
+  .idle-photo .idle-bg-phone{display:none}
+  @media (max-width:720px){
+    .idle-photo .idle-bg-desk{display:none}
+    .idle-photo .idle-bg-phone{display:block}
+  }
   @keyframes idleRise{
     from{opacity:0;transform:translateY(14px)}
     to{opacity:1;transform:translateY(0)}
@@ -616,6 +629,7 @@ Extend the session by 30 mins? | Yes | No | Maybe"></textarea>
           <button class="btn" id="toggleResultsBtn" style="flex:1">Hide from guests</button>
         </div>
         <button class="btn gold" id="presentBtn" style="margin-top:10px">Open results on big screen ↗</button>
+        <button class="btn" id="unpublishBtn" style="margin-top:10px">Unpublish question</button>
         <button class="btn danger" id="resetBtn" style="margin-top:10px">Reset results</button>
       </div>
 
@@ -639,14 +653,10 @@ Extend the session by 30 mins? | Yes | No | Maybe"></textarea>
 
 <a href="#" class="host-link hidden" id="backToVote" title="Back to voting">← Vote</a>
 
-<!-- ============ IDLE SCREEN (between polls / waiting) ============ -->
-<section id="idleView" class="idle hidden">
-  <div class="idle-mark"><img id="idleLogoImg" alt="TrueLegacy" /></div>
-  <div class="idle-rule"><span></span><b></b><span></span></div>
-  <div class="idle-kicker">Live Audience Poll</div>
-  <div class="idle-title">Please stand by</div>
-  <div class="idle-sub"> Keep your phone ready.</div>
-  <div class="idle-foot">TrueLegacy</div>
+<!-- ============ IDLE SCREEN (photo when waiting / host idle) ============ -->
+<section id="idleView" class="idle idle-photo hidden" aria-label="Please stand by">
+  <img class="idle-bg idle-bg-desk" src="Covertt.png" alt="TrueLegacy" />
+  <img class="idle-bg idle-bg-phone" src="idleimagephone.jpeg" alt="TrueLegacy" />
 </section>
 
 <!-- ============ SUCCESSION TOOL PROMO (guest / big screen) ============ -->
@@ -808,22 +818,24 @@ function statusPill(){
   var pill=$("#statusPill");
   if(!state){pill.className="pill off";pill.innerHTML='<span class="d"></span> Waiting';return;}
   if(state.successionTool){pill.className="pill off";pill.innerHTML='<span class="d"></span> Succession on guests';return;}
-  if(state.idle){pill.className="pill off";pill.innerHTML='<span class="d"></span> Idle on guests';return;}
+  if(!hasLivePoll() || state.idle){pill.className="pill off";pill.innerHTML='<span class="d"></span> Idle on guests';return;}
   if(state.active){pill.className="pill live";pill.innerHTML='<span class="d"></span> Voting live';}
   else{pill.className="pill off";pill.innerHTML='<span class="d"></span> Voting closed';}
 }
 function renderAll(){ statusPill(); renderGuest(); renderAdminLive(); renderScreen(); renderBank(); applyGuestIdle(); syncIdleButtons(); syncSuccessionButtons(); }
 
 /* Guest overlays — idle & succession (succession takes priority) */
+function hasLivePoll(){
+  return !!(state && Array.isArray(state.options) && state.options.length>0);
+}
 function setupIdleLogos(){
   var brandLogo=document.querySelector(".brand img");
-  if(!brandLogo) return;
-  if($("#idleLogoImg")) $("#idleLogoImg").src=brandLogo.src;
-  if($("#succLogoImg")) $("#succLogoImg").src=brandLogo.src;
+  if(brandLogo && $("#succLogoImg")) $("#succLogoImg").src=brandLogo.src;
 }
 function applyPresentationOverlays(){
   var succOn = !!(state && state.successionTool);
-  var idleOn = !!(state && state.idle) && !succOn;
+  // No published question → always show photo idle (no need to publish first)
+  var idleOn = !succOn && (!hasLivePoll() || !!(state && state.idle));
   var showSucc = !isAdmin && succOn;
   var showIdle = !isAdmin && idleOn;
   var takeover = showSucc || showIdle;
@@ -831,7 +843,7 @@ function applyPresentationOverlays(){
   $("#successionView").classList.toggle("hidden", !showSucc);
   $("#idleView").classList.toggle("hidden", !showIdle);
   if(takeover){
-    setupIdleLogos();
+    if(showSucc) setupIdleLogos();
     document.querySelector(".wrap").classList.add("hidden");
     $("#screenView").classList.add("hidden");
   } else {
@@ -841,18 +853,28 @@ function applyPresentationOverlays(){
 }
 function applyGuestIdle(){ applyPresentationOverlays(); }
 function syncIdleButtons(){
-  var on = !!(state && state.idle);
-  var label = on ? "End idle" : "Idle screen";
-  var tip = on ? "Return guests and big screen to live view" : "Show idle on guest phones and big screen";
+  // Manual idle only applies once a poll is live; before that idle is automatic
+  var auto = !hasLivePoll();
+  var on = auto || !!(state && state.idle);
+  var label = on && !auto ? "End idle" : "Idle screen";
+  var tip = auto
+    ? "Guests already see the idle image until you publish a question"
+    : (on ? "Return guests and big screen to live view" : "Show idle image on guest phones and big screen");
   ["#idleBtn","#idleBtnTop"].forEach(function(sel){
     var el=$(sel); if(!el) return;
     el.textContent = label;
     el.title = tip;
     el.classList.toggle("on", on);
+    el.disabled = auto;
+    el.style.opacity = auto ? ".55" : "";
   });
 }
 function setGuestIdle(on){
   if(!db){ toast("Database not connected"); return; }
+  if(!hasLivePoll()){
+    toast("Guests already see idle until you publish a question");
+    return;
+  }
   var patch={idle: !!on};
   if(on) patch.successionTool=false;
   P.state().update(patch).then(function(){
@@ -985,7 +1007,7 @@ function renderAdminLive(){
 
   var pill=$("#aStatePill");
   if(state && state.successionTool){pill.className="pill off";pill.innerHTML='<span class="d"></span> Succession';}
-  else if(state && state.idle){pill.className="pill off";pill.innerHTML='<span class="d"></span> Idle';}
+  else if(!hasLivePoll() || (state && state.idle)){pill.className="pill off";pill.innerHTML='<span class="d"></span> Idle';}
   else if(state && state.active){pill.className="pill live";pill.innerHTML='<span class="d"></span> Live';}
   else{pill.className="pill off";pill.innerHTML='<span class="d"></span> Closed';}
   $("#toggleLiveBtn").textContent = (state && state.active) ? "Close voting":"Open voting";
@@ -1199,6 +1221,23 @@ $("#resetBtn").addEventListener("click", function(){
     return P.state().update({round:nextRound, active:true});
   }).then(function(){toast("Results reset");})
     .catch(function(e){console.error(e);toast("Reset failed");});
+});
+$("#unpublishBtn").addEventListener("click", function(){
+  if(!hasLivePoll()){ toast("Nothing is published"); return; }
+  var round = pollRound();
+  var succ = !!(state && state.successionTool);
+  P.votes(round).remove().then(function(){
+    return P.state().set({
+      question:"",
+      options:[],
+      active:false,
+      showResults:false,
+      round:round,
+      idle:false,
+      successionTool:succ
+    });
+  }).then(function(){ toast("Unpublished — guests see idle screen"); })
+    .catch(function(e){ console.error(e); toast("Unpublish failed"); });
 });
 
 /* open big-screen in a new tab; idle toggles guest phones via Firebase */
