@@ -518,6 +518,7 @@
     <div class="toolbar-admin hidden" id="toolbarAdmin">
       <button type="button" class="admin-chip-link" id="idleBtnTop" title="Idle screen">Idle screen</button>
       <button type="button" class="admin-chip-link" id="successionBtnTop" title="Show Succession tool on guest phones">Succession tool</button>
+      <button type="button" class="admin-chip-link" id="formBtnTop" title="Change QR code to Google Form link">Form</button>
       <button type="button" class="admin-chip-link arrow" id="scrollBottomBtn" title="Jump to bottom" aria-label="Jump to bottom">↓</button>
     </div>
   </div>
@@ -596,6 +597,7 @@ Extend the session by 30 mins? | Yes | No | Maybe"></textarea>
             <span id="aStatePill" class="pill off"><span class="d"></span> Closed</span>
             <button type="button" class="admin-chip-link" id="idleBtn" title="Open idle screen">Idle screen</button>
             <button type="button" class="admin-chip-link" id="successionBtn" title="Show Succession tool on guest phones">Succession tool</button>
+            <button type="button" class="admin-chip-link" id="formBtn" title="Change QR code to Google Form link">Form</button>
           </div>
         </div>
 
@@ -812,7 +814,7 @@ function statusPill(){
   if(state.active){pill.className="pill live";pill.innerHTML='<span class="d"></span> Voting live';}
   else{pill.className="pill off";pill.innerHTML='<span class="d"></span> Voting closed';}
 }
-function renderAll(){ statusPill(); renderGuest(); renderAdminLive(); renderScreen(); renderBank(); applyGuestIdle(); syncIdleButtons(); syncSuccessionButtons(); }
+function renderAll(){ statusPill(); renderGuest(); renderAdminLive(); renderScreen(); renderBank(); applyGuestIdle(); syncIdleButtons(); syncSuccessionButtons(); syncFormButtons(); }
 
 /* Guest overlays — idle & succession (succession takes priority) */
 function setupIdleLogos(){
@@ -822,10 +824,18 @@ function setupIdleLogos(){
   if($("#succLogoImg")) $("#succLogoImg").src=brandLogo.src;
 }
 function applyPresentationOverlays(){
+  var formQROn = !!(state && state.formQR);
   var succOn = !!(state && state.successionTool);
   var idleOn = !!(state && state.idle) && !succOn;
   var showSucc = !isAdmin && succOn;
   var showIdle = !isAdmin && idleOn;
+
+  // Redirect guests to Google Form when admin has toggled the Form QR on
+  if(!isAdmin && !isScreen && formQROn){
+    window.location.replace("https://forms.gle/QasmVvSsqMuPxaNU9");
+    return;
+  }
+
   var takeover = showSucc || showIdle;
 
   $("#successionView").classList.toggle("hidden", !showSucc);
@@ -881,6 +891,26 @@ function setGuestSuccession(on){
   P.state().update(patch).then(function(){
     toast(on ? "Succession screen shown to guests" : "Succession screen hidden");
   }).catch(function(e){ console.error(e); toast("Could not update succession tool"); });
+}
+
+/* Form QR toggle — host toggles via state.formQR */
+function syncFormButtons(){
+  var on = !!(state && state.formQR);
+  var label = on ? "Hide form QR" : "Form";
+  var tip = on ? "Reset QR code back to guest vote link" : "Change QR code to Google Form link";
+  ["#formBtn","#formBtnTop"].forEach(function(sel){
+    var el=$(sel); if(!el) return;
+    el.textContent = label;
+    el.title = tip;
+    el.classList.toggle("on", on);
+  });
+  setupShare();
+}
+function setGuestForm(on){
+  if(!db){ toast("Database not connected"); return; }
+  P.state().update({formQR: !!on}).then(function(){
+    toast(on ? "QR code now points to Google Form" : "QR code reset to vote link");
+  }).catch(function(e){ console.error(e); toast("Could not update form QR"); });
 }
 
 /* ---------- GUEST ---------- */
@@ -1212,6 +1242,9 @@ $("#idleBtnTop").addEventListener("click", toggleGuestIdle);
 function toggleGuestSuccession(){ setGuestSuccession(!(state && state.successionTool)); }
 $("#successionBtn").addEventListener("click", toggleGuestSuccession);
 $("#successionBtnTop").addEventListener("click", toggleGuestSuccession);
+function toggleGuestForm(){ setGuestForm(!(state && state.formQR)); }
+$("#formBtn").addEventListener("click", toggleGuestForm);
+$("#formBtnTop").addEventListener("click", toggleGuestForm);
 $("#scrollBottomBtn").addEventListener("click", function(){
   window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
 });
@@ -1221,7 +1254,8 @@ function guestURL(){ var u=new URL(location.href); u.hash=""; return u.toString(
 function setupShare(){
   var url=guestURL();
   $("#guestLink").value=url;
-  var qr="https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=8&data="+encodeURIComponent(url);
+  var qrData = (state && state.formQR) ? "https://forms.gle/QasmVvSsqMuPxaNU9" : url;
+  var qr="https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=8&data="+encodeURIComponent(qrData);
   var img=$("#qrImg"); img.src=qr; img.onerror=function(){ img.style.display="none"; };
   // mirror the brand logo into the big-screen chip
   var brandLogo=document.querySelector(".brand img");
